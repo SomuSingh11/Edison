@@ -26,6 +26,7 @@ export const coursesTable = pgTable("courses", {
   category: varchar("category", { length: 255 }).notNull(),
 
   isPublic: boolean("isPublic").notNull().default(false),
+  isShared: boolean("isShared").notNull().default(false),
 
   courseJson: json("courseJson"),
   courseContent: json().default({}),
@@ -33,6 +34,20 @@ export const coursesTable = pgTable("courses", {
     .references(() => usersTable.email)
     .notNull(),
   bannerImageUrl: varchar().default(""),
+});
+
+export const enrollmentsTable = pgTable("enrollments", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+
+  studentEmail: varchar("student_email", { length: 255 })
+    .references(() => usersTable.email)
+    .notNull(),
+
+  courseCid: varchar("course_cid", { length: 255 })
+    .references(() => coursesTable.cid)
+    .notNull(),
+
+  enrolledAt: timestamp("enrolled_at").defaultNow().notNull(),
 });
 
 export const QuizzesTable = pgTable("quizzes", {
