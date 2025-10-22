@@ -94,7 +94,7 @@ const ExploreCoursesPage = () => {
 
   return (
     <div className="p-6 mt-8 space-y-12">
-      {/* --- Section 2: Course Overviews (Content Not Generated) --- */}
+      {/* --- Section 1: Course Overviews (Content Not Generated) --- */}
       {overviewCourses.length > 0 && (
         <section>
           <div className="flex items-center gap-3">
@@ -115,7 +115,7 @@ const ExploreCoursesPage = () => {
           </div>
         </section>
       )}
-      {/* --- Section 1: Published Courses (Content Generated) --- */}
+      {/* --- Section 2: Published Courses (Content Generated) --- */}
       {publishedCourses.length > 0 && (
         <section>
           <div className="flex items-center gap-3">

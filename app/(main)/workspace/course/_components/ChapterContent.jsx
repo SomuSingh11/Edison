@@ -1,118 +1,134 @@
 "use client";
+import { useContext, useState } from "react";
+import dynamic from "next/dynamic";
 import { SelectChapterIndexContext } from "@/context/SelectChapterIndexContext";
-import React from "react";
-import { useContext } from "react";
-import { BookOpen, Video } from "lucide-react";
-import YouTube from "react-youtube";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
+import { BookOpen, Edit } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import axios from "axios";
+import FennyMan from "./FennyMan";
+import Quizzy from "./Quizzy";
 
-const ChapterContent = ({ courseInfo }) => {
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+
+// Dynamically import BOTH the viewer and the editor to prevent SSR errors
+const CourseContentViewer = dynamic(() => import("./CourseContentViewer"), {
+  ssr: false,
+});
+const CourseEditor = dynamic(() => import("./CourseEditor"), { ssr: false });
+
+const ChapterContent = ({ courseInfo, courseId, refreshData }) => {
   const { selectedChapterIndex } = useContext(SelectChapterIndexContext);
   const courseContent = courseInfo?.courseContent || [];
+  console.log("ChapterContent courseContent:", courseContent);
   const currentChapter = courseContent[selectedChapterIndex];
+  //console.log("Current Chapter Index:", selectedChapterIndex);
 
-  // If no chapter is selected yet, show a helpful message.
+  const [isEditing, setIsEditing] = useState(false);
+  const [isQuizModalOpen, setIsQuizModalOpen] = useState(false);
+
   if (!currentChapter) {
     return (
       <div className="flex flex-col items-center justify-center p-10 mt-4 text-center md:ml-80">
         <BookOpen className="w-16 h-16 text-gray-300" />
         <h3 className="mt-4 text-xl font-semibold text-gray-800">
-          Select a chapter
+          Select a Chapter
         </h3>
         <p className="mt-1 text-gray-500">
-          Choose a chapter from the sidebar to begin learning.
+          Choose a chapter from the sidebar to view its content.
         </p>
       </div>
     );
   }
 
-  const videoData = currentChapter.youtubeVideo || [];
-  const topics = currentChapter.CourseContent?.topics || [];
+  // Function to handle saving the updated content
+  const handleSaveContent = async (updatedBlocks) => {
+    try {
+      const fullCourseContent = JSON.parse(JSON.stringify(courseContent));
+
+      // 2. Replace the old chapter's blocks with the new edited blocks.
+      const existingChapterContent =
+        fullCourseContent[selectedChapterIndex].CourseContent;
+      fullCourseContent[selectedChapterIndex].CourseContent = {
+        ...existingChapterContent,
+        blocks: updatedBlocks.blocks,
+      };
+
+      // 3. Send the entire updated course content array to your backend.
+      await axios.put("/api/crud-course", {
+        courseId: courseInfo.cid,
+        content: fullCourseContent,
+      });
+
+      toast.success("Content saved successfully!");
+      setIsEditing(false); // Exit edit mode
+      refreshData(); // Refresh the data to show the latest version
+    } catch (error) {
+      toast.error("Failed to save content.");
+      console.error("Save error:", error);
+    }
+  };
+
+  const singleChapterArray = [currentChapter];
 
   return (
-    <div className="p-5 md:p-8  space-y-12">
-      {/* --- 3. Simplified Header (No Buttons) --- */}
-      <header>
-        <p className="text-green-700 font-semibold">
-          Chapter {selectedChapterIndex + 1}
-        </p>
-        <h1 className="text-3xl font-bold text-gray-800">
-          {currentChapter.CourseContent.chapterName}
-        </h1>
-      </header>
+    <div className="p-2 px-10 w-full">
+      <div className="flex sticky top-0 p-4 z-50 w-full">
+        <FennyMan
+          courseContent={courseContent}
+          selectedChapterIndex={selectedChapterIndex}
+        />
 
-      {/* Video Section */}
-      {videoData.length > 0 && (
-        <section className="p-4 bg-gray-50 rounded-2xl border mt-2 max-w-full overflow-hidden">
-          <div className="flex items-center gap-2 mb-4">
-            <Video className="w-6 h-6 text-green-700" />
-            <h2 className="text-xl font-bold text-gray-800">Related Videos</h2>
-          </div>
-
-          <Carousel
-            opts={{
-              align: "start",
-              loop: true,
-            }}
-            className="w-full"
+        {/* Quizzy Modal */}
+        <Dialog open={isQuizModalOpen} onOpenChange={setIsQuizModalOpen}>
+          <DialogTrigger asChild>
+            <Button variant="outline" className="ml-4 hover:cursor-pointer">
+              Start Quiz
+            </Button>
+          </DialogTrigger>
+          <DialogContent
+            className="w-[80vw] max-w-7xl h-[80vh] overflow-y-auto"
+            style={{ width: "60vw", maxWidth: "80vw" }}
           >
-            <CarouselContent className="flex w-full">
-              {videoData.map((video, index) => (
-                <CarouselItem
-                  key={video?.videoId ?? index}
-                  className="basis-full sm:basis-1/2 md:basis-1/3 lg:basis-1/4 px-2"
-                >
-                  <div className="aspect-video overflow-hidden rounded-xl shadow-sm bg-white">
-                    <YouTube
-                      videoId={video.videoId}
-                      opts={{
-                        width: "100%",
-                        height: "100%",
-                        playerVars: { showinfo: 0, modestbranding: 1 },
-                      }}
-                      className="w-full h-full"
-                    />
-                  </div>
-                </CarouselItem>
-              ))}
-            </CarouselContent>
+            <Quizzy
+              courseName={courseInfo?.name}
+              courseContent={courseContent}
+              courseId={courseId}
+              selectedChapterIndex={selectedChapterIndex}
+              onClose={() => setIsQuizModalOpen(false)}
+            />
+          </DialogContent>
+        </Dialog>
 
-            <CarouselPrevious className="hidden sm:flex left-0" />
-            <CarouselNext className="hidden sm:flex right-0" />
-          </Carousel>
-        </section>
-      )}
+        {!isEditing && (
+          <Button
+            variant="outline"
+            className="hover:cursor-pointer ml-auto"
+            onClick={() => setIsEditing(true)}
+          >
+            <Edit className="w-4 h-4 mr-2" /> Edit Content
+          </Button>
+        )}
+      </div>
 
-      {/* Topics Section */}
-      <section>
-        <div className="space-y-8">
-          {topics.map((topic, index) => (
-            <div
-              className="p-6 bg-white border rounded-xl shadow-sm"
-              key={topic?.topic ?? index}
-            >
-              <div className="flex items-center gap-3 mb-4">
-                <div className="flex items-center justify-center w-8 h-8 font-bold text-green-800 bg-green-100 rounded-md shrink-0">
-                  {index + 1}
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900">
-                  {topic.topic}
-                </h3>
-              </div>
-              <div
-                className="prose prose-green max-w-none"
-                dangerouslySetInnerHTML={{ __html: topic.content }}
-              />
-            </div>
-          ))}
-        </div>
-      </section>
+      {/* Conditionally render the viewer or the editor */}
+      <div className="mt-2">
+        {isEditing ? (
+          <CourseEditor
+            initialData={currentChapter.CourseContent}
+            onSave={handleSaveContent}
+            onCancel={() => setIsEditing(false)}
+          />
+        ) : (
+          <CourseContentViewer courseContent={singleChapterArray} />
+        )}
+      </div>
     </div>
   );
 };

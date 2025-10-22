@@ -7,49 +7,43 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { SelectChapterIndexContext } from "@/context/SelectChapterIndexContext";
-import { ListVideo } from "lucide-react";
+import { Youtube, Heading } from "lucide-react";
 
 const ChapterListSidebar = ({ courseInfo }) => {
-  // --- Simplified Data Access ---
-  // The component now only expects the course object itself.
   const courseContent = courseInfo?.courseContent || [];
-
   const { selectedChapterIndex, setSelectedChapterIndex } = useContext(
     SelectChapterIndexContext
   );
 
   return (
-    <nav
-      aria-label="Chapters"
-      className="hidden md:block left-0 w-90 flex-shrink-0 bg-white border-r p-4 overflow-y-auto"
-    >
-      <h2 className="text-xl font-bold mb-4 ml-2 -mt-1">{courseInfo?.name}</h2>
-      <Accordion
-        type="multiple"
-        defaultValue={courseContent.map((_, i) => `item-${i}`)} // Keep all chapters expanded
-        className="w-full"
-      >
+    <nav aria-label="Chapters" className="">
+      <h2 className="text-xl font-bold mb-4 ml-2 -mt-1 truncate">
+        {courseInfo?.name}
+      </h2>
+
+      <Accordion type="multiple" className="w-full">
         {courseContent.map((chapter, index) => {
           const isSelected = selectedChapterIndex === index;
+          const chapterData = chapter.CourseContent;
 
           return (
+            // ✅ FIX: Add the 'value' prop here
             <AccordionItem
               value={`item-${index}`}
               key={index}
               className="border-none"
             >
               <AccordionTrigger
-                // The only action is to select the chapter
                 onClick={() => setSelectedChapterIndex(index)}
-                className={`flex items-center gap-3 p-3 rounded-lg text-left hover:no-underline transition-colors ${
+                className={`flex w-full items-center gap-3 rounded-lg p-3 text-left hover:no-underline transition-colors ${
                   isSelected
                     ? "bg-green-100 text-green-800"
                     : "hover:bg-gray-100"
                 }`}
               >
-                {/* --- Simplified Chapter Number --- */}
+                {/* Chapter Number */}
                 <div
-                  className={`flex items-center justify-center w-8 h-8 font-bold rounded-md shrink-0 ${
+                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md font-bold ${
                     isSelected
                       ? "bg-green-700 text-white"
                       : "bg-gray-100 text-gray-700"
@@ -58,21 +52,39 @@ const ChapterListSidebar = ({ courseInfo }) => {
                   {index + 1}
                 </div>
                 <span className="flex-1 font-semibold text-gray-800">
-                  {chapter.CourseContent.chapterName}
+                  {chapterData?.chapterName?.replace(/^\d+\.\s*/, "")}
                 </span>
               </AccordionTrigger>
 
               <AccordionContent className="pl-8 pt-2 pb-1">
-                <ul className="space-y-2 border-l-2 border-gray-200">
-                  {chapter.CourseContent.topics.map((topic, topicIndex) => (
-                    <li
-                      key={topicIndex}
-                      className="flex items-center gap-2 pl-4 text-sm text-gray-600"
-                    >
-                      <ListVideo className="w-4 h-4 text-gray-400" />
-                      {topic.topic}
-                    </li>
-                  ))}
+                <ul className="space-y-1 border-l-2 border-gray-200">
+                  {chapterData?.blocks?.map((block, itemIndex) => {
+                    let Icon = null;
+                    let display = null;
+
+                    if (block.type === "header") {
+                      Icon = Heading;
+                      display = block.data.text;
+                    } else if (
+                      block.type === "embed" &&
+                      block.data.service === "youtube"
+                    ) {
+                      Icon = Youtube;
+                      display = block.data.caption || "YouTube Video";
+                    }
+
+                    if (!Icon) return null;
+
+                    return (
+                      <li
+                        key={itemIndex}
+                        className="flex cursor-pointer items-center gap-2 rounded-md p-2 pl-4 text-sm text-gray-600 transition-colors hover:bg-gray-100"
+                      >
+                        <Icon className="h-4 w-4 shrink-0 text-gray-400" />
+                        <span>{display}</span>
+                      </li>
+                    );
+                  })}
                 </ul>
               </AccordionContent>
             </AccordionItem>

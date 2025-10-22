@@ -47,11 +47,6 @@ const NAVIGATION_ITEMS = [
     icon: PencilRuler,
     path: "/workspace/ai-tools",
   },
-  {
-    title: "Profile",
-    icon: UserCircle2,
-    path: "/workspace/profile",
-  },
 ];
 
 const AppSidebar = () => {
@@ -75,7 +70,7 @@ const AppSidebar = () => {
             aria-label="Edison - Go to dashboard"
           >
             <Image
-              src="/edison.png"
+              src="/logo.svg"
               alt="Edison"
               width={26}
               height={26}

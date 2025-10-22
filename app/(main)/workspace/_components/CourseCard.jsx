@@ -52,10 +52,6 @@ const CourseCard = ({ course }) => {
                 {courseJson?.estimatedDuration ?? "—"}
               </span>
             </span>
-
-            <span className="text-xs text-gray-400">
-              By {course?.author ?? "Unknown"}
-            </span>
           </div>
 
           <div>

@@ -6,25 +6,43 @@ import { db } from "@/config/db";
 import { coursesTable } from "@/config/schema";
 
 const PROMPT = `
-You are an expert instructional designer. Based on the following chapter details, generate detailed educational content for each topic.
-The content for each topic MUST be in valid HTML format (e.g., using <p>, <ul>, <li>, <code>, <strong> tags).
+You are an expert instructional designer. Based on the following chapter details, generate detailed educational content.
+For each topic in the user input, create a 'header' block for its title, followed by one or more 'paragraph', 'list', or 'code' blocks for its content.
+The content for each topic MUST be broken down into individual blocks.
 
 CRITICAL INSTRUCTIONS:
-- Return ONLY valid JSON, nothing else
-- Do NOT include markdown code fences like \`\`\`json or \`\`\`
-- Do NOT include any explanatory text before or after the JSON
-- Do NOT include comments in the JSON
-- Ensure all strings are properly escaped
-- Do NOT use newlines inside string values (use HTML tags like <br> instead)
+- Return ONLY valid JSON, nothing else.
+- Do NOT include markdown code fences like \`\`\`json or \`\`\`.
+- For every code snippet, you MUST use the "codeBox" type and correctly identify the programming language (e.g., "java", "javascript", "python", "css") in the "language" field.
 
-The JSON schema you must follow:
+The JSON schema you must follow is:
 {
   "chapterName": "string",
-  "topics": [
+  "blocks": [
     {
-      "topic": "string",
-      "content": "string (HTML content here)"
-    }
+      "type": "header",
+      "data": { "text": "The Topic Title", "level": 3 }
+    },
+    {
+      "type": "paragraph",
+      "data": { "text": "The content for the topic. This can include <b>bold</b> and <i>italic</i> tags." }
+    },
+    {
+      "type": "code",
+      "data": { "code": "public class Main {\\n  // your code here\\n}" }
+    },
+    {
+      "type": "codeBox",
+      "data": {
+        "code": "console.log('Hello, World!');",
+        "language": "javascript"
+      }
+    },
+    {
+      "type": "latex",
+      "data": { "math": "E = mc^2" }
+    },
+    // ... and so on for all topics.
   ]
 }
 
@@ -57,9 +75,6 @@ const safeJsonParse = (rawText) => {
       // Attempt common fixes
       // Fix trailing commas
       let fixed = cleaned.replace(/,\s*([}\]])/g, "$1");
-
-      // Fix unescaped quotes in strings (basic attempt)
-      // This is a simple fix and may not catch all cases
 
       return { data: JSON.parse(fixed), error: null };
     }
@@ -104,7 +119,7 @@ export async function POST(req) {
       );
 
       const config = {
-        responseMimeType: "application/json", // Request JSON format
+        responseMimeType: "application/json",
         temperature: 0.7,
       };
       const model = "gemini-2.0-flash-exp";
@@ -170,10 +185,9 @@ export async function POST(req) {
           chapter.chapterName
         );
         courseContent.push({
-          youtubeVideo: [],
           CourseContent: {
             chapterName: chapter.chapterName,
-            topics: [],
+            blocks: [],
             error: "AI returned empty response.",
           },
         });
@@ -192,38 +206,41 @@ export async function POST(req) {
           raw.substring(0, 500)
         );
 
-        // Return a fallback structure
         courseContent.push({
-          youtubeVideo: [],
           CourseContent: {
             chapterName: chapter.chapterName,
-            topics: chapter.topics.map((topic) => ({
-              topic: topic,
-              content:
-                "<p>Content generation failed. Please try regenerating this chapter.</p>",
-            })),
-            error: "Failed to generate content due to invalid AI response.",
+            blocks: [],
+            error: "Failed to parse AI response.",
           },
         });
         continue;
       }
 
-      // Fetch YouTube videos in parallel
+      // Successfully parsed - fetch YouTube videos
       const youtubeData = await GetYoutubeVideo(chapter.chapterName);
+      const youtubeEmbedBlocks = youtubeData.map((video) => ({
+        type: "embed",
+        data: {
+          service: "youtube",
+          embed: `https://www.youtube.com/embed/${video.videoId}`,
+          caption: video.title,
+        },
+      }));
 
-      courseContent.push({
-        youtubeVideo: youtubeData,
-        CourseContent: parsed,
-      });
+      // Prepend the YouTube videos to the AI-generated content blocks
+      parsed.blocks = [...youtubeEmbedBlocks, ...(parsed.blocks || [])];
 
-      // Rate limiting: Wait 1.5 seconds between chapters (except for the last one)
+      // Push the new unified structure ready for Editor.js
+      courseContent.push({ CourseContent: parsed });
+
+      // Rate limiting: Wait 1.1s between chapters (except for the last one)
       if (i < courseJson.chapters.length - 1) {
-        console.log(`Waiting 1.5s before processing next chapter...`);
+        console.log(`Waiting 1.1s before processing next chapter...`);
         await new Promise((resolve) => setTimeout(resolve, 1100));
       }
     }
 
-    // Update database
+    // Update database AFTER processing all chapters
     await db
       .update(coursesTable)
       .set({ courseContent })
@@ -249,9 +266,11 @@ const GetYoutubeVideo = async (topic) => {
   try {
     const params = {
       part: "snippet",
-      q: topic,
-      maxResults: 4, // Fixed typo: maxResult -> maxResults
+      q: `${topic} tutorial`,
+      maxResults: 1,
       type: "video",
+      regionCode: "US",
+      relevanceLanguage: "en",
       key: process.env.YOUTUBE_API_KEY,
     };
 
@@ -267,6 +286,6 @@ const GetYoutubeVideo = async (topic) => {
     return youtubeVideoList;
   } catch (error) {
     console.error("Error fetching YouTube videos:", error.message);
-    return []; // Return empty array on error
+    return [];
   }
 };
