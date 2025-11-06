@@ -8,26 +8,41 @@ import ChapterTopicList from "../../_components/ChapterTopicList";
 const EditCourse = ({ viewCourse = false }) => {
   const { courseId } = useParams();
   const [loading, setLoading] = useState(false);
-
+  const [isEditingLayout, setIsEditingLayout] = useState(false);
   const [course, setCourse] = useState();
-  const GetCourseInfo = async () => {
-    const result = await axios.get("/api/courses?courseId=" + courseId);
-    console.log(result.data);
 
-    setLoading(false);
-    setCourse(result.data);
+  const GetCourseInfo = async () => {
+    setLoading(true);
+    try {
+      const result = await axios.get("/api/courses?courseId=" + courseId);
+      setCourse(result.data);
+    } catch (error) {
+      console.error("Failed to fetch course", error);
+    } finally {
+      setLoading(false);
+    }
   };
+
   useEffect(() => {
     GetCourseInfo();
   }, []);
+
+  if (loading) {
+    return <div>Loading course details...</div>;
+  }
+  if (!course) {
+    return <div>Course not found or failed to load.</div>;
+  }
+
   return (
     <div>
       {/* Contains logic to create course */}
-      <CourseInfo course={course} viewCourse={viewCourse} />{" "}
-      <ChapterTopicList
+      <CourseInfo
         course={course}
-        refreshData={() => GetEnrolledCourseById()}
-      />
+        viewCourse={viewCourse}
+        courseId={courseId}
+      />{" "}
+      <ChapterTopicList course={course} />
     </div>
   );
 };

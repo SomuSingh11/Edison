@@ -25,13 +25,14 @@ STUDENT'S QUESTION:
 ${question}
 
 INSTRUCTIONS:
-- Answer based ONLY on the chapter content above
-- Write in a clear, conversational style as if explaining to a friend
-- Use simple HTML formatting: <p> for paragraphs, <strong> for important points, <ul> and <li> for lists
-- DO NOT use code blocks, syntax highlighting, or technical formatting
-- Keep it simple and easy to copy into notes
-- If the question is unrelated to the chapter, politely say so
-- Be concise but thorough
+- **Prioritize** answering the question based directly on the provided CHAPTER CONTENT.
+- If helpful for clarification or providing deeper context, you **may** include **brief supplementary information** from your general knowledge about the topic.
+- **Clearly indicate** any supplementary information (e.g., start with "For extra context:" or "Beyond the chapter material:").
+- Write in a clear, conversational style, like explaining to a friend.
+- Use simple HTML formatting: <p> for paragraphs, <strong> for important points, <ul> and <li> for lists.
+- Use <code> for inline code and <pre><code> for code blocks if relevant.
+- If the student's question is completely unrelated to the chapter content, politely state that you can only answer questions about the provided material.
+- Be concise but thorough in your explanation.
 
 Write your answer as if it's going directly into the student's study notes.`;
 

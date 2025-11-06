@@ -38,9 +38,9 @@ const NAVIGATION_ITEMS = [
     path: "/workspace/my-learning",
   },
   {
-    title: "Explore Courses",
+    title: "Shared Courses",
     icon: Compass,
-    path: "/workspace/explore",
+    path: "/workspace/shared",
   },
   {
     title: "AI Tools",

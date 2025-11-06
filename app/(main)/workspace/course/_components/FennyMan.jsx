@@ -10,6 +10,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
+import MDEditor from "@uiw/react-md-editor";
 import { Input } from "@/components/ui/input";
 
 const FennyMan = ({ courseContent, selectedChapterIndex }) => {
@@ -106,11 +107,13 @@ const FennyMan = ({ courseContent, selectedChapterIndex }) => {
       </div>
       {/* Response Area - Only shows when there's content */}
       {aiResponse && (
-        <div className="p-4 absolute w-3/4 max-h-[400px] overflow-y-auto bg-gray-50/70 backdrop-blur-md border border-blue-200/50 rounded-lg animate-in fade-in-50">
-          <div
-            className="prose prose-blue max-w-none"
-            dangerouslySetInnerHTML={{ __html: aiResponse }}
-          />
+        <div className="p-4 absolute w-3/4 max-h-[500px] overflow-y-auto bg-white backdrop-blur-md border border-blue-200/50 rounded-lg animate-in fade-in-50">
+          <div data-color-mode="light">
+            <MDEditor.Markdown
+              source={aiResponse || "The AI did not provide a response."}
+              className="w-full h-full"
+            />
+          </div>
           <div className="absolute mt-2 top-2 right-2 flex gap-2 backdrop-blur-lg bg-gray-100/70 p-1 rounded-md">
             <Button
               variant="ghost"

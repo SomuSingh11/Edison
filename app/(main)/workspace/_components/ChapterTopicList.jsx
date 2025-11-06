@@ -11,6 +11,7 @@ import ChapterMapView from "./ChapterMapVieww";
 const ChapterTopicList = ({ course }) => {
   const courseLayout = course?.courseJson?.course;
   const [view, setView] = useState("list");
+  console.log("Course Layout:", courseLayout);
 
   return (
     <div className="p-6 mt-10 bg-gray-50 rounded-2xl">
