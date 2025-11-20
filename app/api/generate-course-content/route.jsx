@@ -122,7 +122,7 @@ export async function POST(req) {
         responseMimeType: "application/json",
         temperature: 0.7,
       };
-      const model = "gemini-2.0-flash-exp";
+      const model = "gemini-2.5-flash";
 
       const contents = [
         {
