@@ -1,5 +1,5 @@
-import { db } from "@/configs/db";
-import { QuizzesTable } from "@/configs/schema";
+import { db } from "@/config/db";
+import { QuizzesTable } from "@/config/schema";
 import { currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { eq, and } from "drizzle-orm";
